@@ -1,42 +1,44 @@
-// app/index.tsx
-import { View } from "react-native";
+// app/(tabs)/index.tsx
 import { useState, useEffect } from "react";
-
+import { useWindowDimensions } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import WeatherCard from "../../components/WeatherCard";
 import SearchBox from "../../components/SearchBox";
 import RiwayatList from "../../components/RiwayatList";
 import IndikatorAQI from "../../components/IndikatorAQI";
+import { LaporanUdara } from "../../types/cuaca";
 
 export default function HalamanUtama() {
   const [kotaAktif, setKotaAktif] = useState("Pekalongan");
-  const [riwayat, setRiwayat] = useState<string[]> (["Pekalongan"]);
+  const [riwayat, setRiwayat] = useState<string[]>(["Pekalongan"]);
+  const { width } = useWindowDimensions();
+  const isTablet = width > 768;
 
-  // Tambahkan useEffect untuk mencatat perubahan kota aktif
   useEffect(() => {
-    console.log ("Kota aktif berubah menjadi:", kotaAktif);
+    console.log("Kota aktif berubah menjadi:", kotaAktif);
   }, [kotaAktif]);
 
-function handleCari(kota: string) {
-  setKotaAktif(kota);
-if (!riwayat.includes(kota)) {
-  setRiwayat([...riwayat, kota]);
+  function handleCari(kota: string) {
+    setKotaAktif(kota);
+    if (!riwayat.includes(kota)) {
+      setRiwayat([...riwayat, kota]);
+    }
   }
-}
 
-return (
-  <View style={{ padding: 16, paddingTop :45 , gap: 16 }}>
-    <SearchBox onCari={handleCari} />
-    <WeatherCard kota={kotaAktif} suhu={29} tingkatAQI="BAIK" />
-    <RiwayatList daftarKota={riwayat} />
+  // Data statis sementara, sama seperti suhu/tingkatAQI di WeatherCard di atas
+  const laporanUdara: LaporanUdara = {
+    kota: kotaAktif,
+    indeksAQI: 45,
+    tingkat: "BAIK",
+    diperbaruiPada: "14 September 2026",
+  };
 
-    <IndikatorAQI
-      laporan={{
-        kota: kotaAktif,
-        indeksAQI: 45,
-        tingkat: "BAIK",
-        diperbaruiPada: "14 September 2026",
-      }}
-    />
-  </View>
-);
+  return (
+    <SafeAreaView style={{ flex: 1, padding: isTablet ? 32 : 16, gap: 16 }}>
+      <SearchBox onCari={handleCari} />
+      <WeatherCard kota={kotaAktif} suhu={29} tingkatAQI="BAIK" />
+      <RiwayatList daftarKota={riwayat} />
+      <IndikatorAQI laporan ={laporanUdara} />
+    </SafeAreaView>
+  );
 }
