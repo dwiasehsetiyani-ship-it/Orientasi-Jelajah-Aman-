@@ -1,13 +1,11 @@
-import { View, Text } from "react-native";
+import { Text, View } from "react-native";
 import { LaporanUdara } from "../types/cuaca";
 
 interface IndikatorAQIProps {
   laporan: LaporanUdara;
 }
 
-export default function IndikatorAQI({
-  laporan,
-}: IndikatorAQIProps) {
+export default function IndikatorAQI({ laporan }: IndikatorAQIProps) {
   let warna = "black";
 
   switch (laporan.tingkat) {
@@ -35,9 +33,7 @@ export default function IndikatorAQI({
     >
       <Text>Kota: {laporan.kota}</Text>
       <Text>Indeks AQI: {laporan.indeksAQI}</Text>
-      <Text style={{ color: warna }}>
-        Tingkat: {laporan.tingkat}
-      </Text>
+      <Text style={{ color: warna }}>Tingkat: {laporan.tingkat}</Text>
 
       {laporan.diperbaruiPada && (
         <Text>Diperbarui: {laporan.diperbaruiPada}</Text>
