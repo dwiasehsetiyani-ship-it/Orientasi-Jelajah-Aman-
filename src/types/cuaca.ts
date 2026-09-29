@@ -1,4 +1,4 @@
-// types/cuaca.ts
+// src/types/cuaca.ts
 
 export interface DataCuaca {
   kota: string;
@@ -13,8 +13,8 @@ export interface WeatherCardProps {
   kota: string;
   suhu: number;
   tingkatAQI: TingkatAQI;
+  indeksAQI?: number; // baru: angka asli dari API, opsional
 }
-
 
 export interface LaporanUdara {
   kota: string;
