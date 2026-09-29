@@ -1,40 +1,58 @@
 // src/app/(tabs)/index.tsx
-import { useState, useEffect } from "react";
-import { View, Text, ActivityIndicator, Button } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { View, Text, ActivityIndicator, Button, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SearchBox from "../../components/SearchBox";
 import WeatherCard from "../../components/WeatherCard";
+import AtribusiCuaca from "../../components/AtribusiCuaca";
 import { useDebounce } from "../../hooks/use-debounce";
 import { cariKota } from "../../services/geocodingService";
+import { ambilCuaca } from "../../services/WeatherService";
+import { ambilKualitasUdara } from "../../services/airQualityService";
+import { konversiTingkatAQI } from "../../services/weatherAdapter";
+import { labelKodeCuaca } from "../../constants/WeatherCodes";
 import { HasilGeocoding } from "../../types/geocoding";
+import { DataCuacaLengkap, DataKualitasUdara } from "../../types/weather";
 
 export default function HalamanUtama() {
   const [teksCari, setTeksCari] = useState("");
-  const [hasil, setHasil] = useState<HasilGeocoding[]>([]);
+  const [hasilPencarian, setHasilPencarian] = useState<HasilGeocoding[]>([]);
+  const [kotaTerpilih, setKotaTerpilih] = useState<HasilGeocoding | null>(null);
+  const [cuaca, setCuaca] = useState<DataCuacaLengkap | null>(null);
+  const [kualitasUdara, setKualitasUdara] = useState<DataKualitasUdara | null>(null);
   const [sedangMemuat, setSedangMemuat] = useState(false);
   const [pesanError, setPesanError] = useState<string | null>(null);
 
-  const teksTertunda = useDebounce(teksCari, 800);
+  const teksTertunda = useDebounce(teksCari, 500);
+  const requestIdRef = useRef(0); // pencegah race condition
 
   useEffect(() => {
     if (teksTertunda.trim().length === 0) {
-      setHasil([]);
-      setPesanError(null);
+      setHasilPencarian([]);
       return;
     }
-    ambilData(teksTertunda);
+    cariKota(teksTertunda).then(setHasilPencarian).catch(() => setHasilPencarian([]));
   }, [teksTertunda]);
 
-  async function ambilData(nama: string) {
+  async function pilihKota(kota: HasilGeocoding) {
+    setKotaTerpilih(kota);
+    const idSaatIni = ++requestIdRef.current;
     setSedangMemuat(true);
     setPesanError(null);
+
     try {
-      const data = await cariKota(nama);
-      setHasil(data);
+      const [dataCuaca, dataAQI] = await Promise.all([
+        ambilCuaca(kota.latitude, kota.longitude),
+        ambilKualitasUdara(kota.latitude, kota.longitude),
+      ]);
+      if (idSaatIni !== requestIdRef.current) return;
+      setCuaca(dataCuaca);
+      setKualitasUdara(dataAQI);
     } catch (err) {
-      setPesanError("Gagal mengambil data. Periksa koneksi internet Anda.");
+      if (idSaatIni !== requestIdRef.current) return;
+      setPesanError("Gagal memuat data cuaca. Periksa koneksi internet Anda.");
     } finally {
-      setSedangMemuat(false);
+      if (idSaatIni === requestIdRef.current) setSedangMemuat(false);
     }
   }
 
@@ -42,25 +60,53 @@ export default function HalamanUtama() {
     <SafeAreaView style={{ flex: 1, padding: 16, gap: 16 }}>
       <SearchBox onCari={setTeksCari} />
 
+      {hasilPencarian.map((kota) => (
+        <TouchableOpacity key={kota.id} onPress={() => pilihKota(kota)}>
+          <Text>{kota.name}</Text>
+        </TouchableOpacity>
+      ))}
+
       {sedangMemuat && <ActivityIndicator />}
+
       {pesanError && (
-        <View accessibilityLabel="Pesan kesalahan pencarian kota">
-          <Text accessibilityLabel={pesanError}>{pesanError}</Text>
-          <Button title="Coba Lagi" onPress={() => ambilData(teksTertunda)} />
+        <View>
+          <Text>{pesanError}</Text>
+          <Button
+            title="Coba Lagi"
+            onPress={() => kotaTerpilih && pilihKota(kotaTerpilih)}
+          />
         </View>
       )}
 
-      {!sedangMemuat && !pesanError && teksTertunda.length > 0 && hasil.length === 0 && (
-        <Text accessibilityLabel="Kota tidak ditemukan">Kota tidak ditemukan</Text>
+      {cuaca && kualitasUdara && kotaTerpilih && !sedangMemuat && (
+        <WeatherCard
+          kota={kotaTerpilih.name}
+          suhu={cuaca.saatIni.suhu}
+          tingkatAQI={konversiTingkatAQI(kualitasUdara.indeksAQI)}
+          indeksAQI={kualitasUdara.indeksAQI}
+        />
       )}
 
-      {!sedangMemuat && !pesanError && hasil.length > 0 && (
-        <Text>Ditemukan {hasil.length} kota</Text>
+      {cuaca && (
+        <View>
+          <Text style={{ fontSize: 12, color: "#888" }}>
+            Kondisi: {labelKodeCuaca(cuaca.saatIni.kodeCuaca)} • Angin{" "}
+            {cuaca.saatIni.kecepatanAngin} km/j
+          </Text>
+          <Text style={{ fontSize: 12, color: "#888" }}>
+            Hari ini: maks {cuaca.harian.suhuMaksimal[0]}°C / min{" "}
+            {cuaca.harian.suhuMinimal[0]}°C
+          </Text>
+        </View>
       )}
 
-      {hasil.map((kota) => (
-        <WeatherCard key={kota.id} kota={kota.name} suhu={29} tingkatAQI="BAIK" />
-      ))}
+      {kualitasUdara && (
+        <Text style={{ fontSize: 11, color: "#888", textAlign: "center" }}>
+          PM2.5: {kualitasUdara.pm25} µg/m³ • PM10: {kualitasUdara.pm10} µg/m³
+        </Text>
+      )}
+
+      <AtribusiCuaca />
     </SafeAreaView>
   );
 }
