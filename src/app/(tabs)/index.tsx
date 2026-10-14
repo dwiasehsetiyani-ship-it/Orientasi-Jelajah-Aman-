@@ -1,19 +1,25 @@
 // src/app/(tabs)/index.tsx
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {ActivityIndicator,Button,Text,TouchableOpacity,View,} from "react-native";
+import {
+  ActivityIndicator,
+  Button,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AtribusiCuaca from "../../components/AtribusiCuaca";
+import BannerOffline from "../../components/Banneroffline";
 import SearchBox from "../../components/SearchBox";
 import WeatherCard from "../../components/WeatherCard";
 import { labelKodeCuaca } from "../../constants/WeatherCodes";
 import { useDebounce } from "../../hooks/use-debounce";
-import { ambilKualitasUdara } from "../../services/airQualityService";
+import { muatDataKota } from "../../services/dataKotaService";
 import { ambilSemuaFavorit } from "../../services/favoritStorage";
 import { cariKota } from "../../services/geocodingService";
 import {ambilKoordinatSaatIni,mintaIzinLokasi,} from "../../services/locationService";
 import { konversiTingkatAQI } from "../../services/weatherAdapter";
-import { ambilCuaca } from "../../services/WeatherService";
 import { HasilGeocoding } from "../../types/geocoding";
 import { DataCuacaLengkap, DataKualitasUdara } from "../../types/weather";
 
@@ -29,6 +35,8 @@ export default function HalamanUtama() {
   const [pesanError, setPesanError] = useState<string | null>(null);
   const [pesanLokasi, setPesanLokasi] = useState<string | null>(null);
   const [sudahFavorit, setSudahFavorit] = useState(false);
+  const [dariCache, setDariCache] = useState(false);
+  const [waktuData, setWaktuData] = useState(0);
 
   const teksTertunda = useDebounce(teksCari, 500);
   const requestIdRef = useRef(0); // pencegah race condition
@@ -66,16 +74,20 @@ export default function HalamanUtama() {
     setPesanError(null);
 
     try {
-      const [dataCuaca, dataAQI] = await Promise.all([
-        ambilCuaca(kota.latitude, kota.longitude),
-        ambilKualitasUdara(kota.latitude, kota.longitude),
-      ]);
-      if (idSaatIni !== requestIdRef.current) return;
-      setCuaca(dataCuaca);
-      setKualitasUdara(dataAQI);
+      const data = await muatDataKota(kota.latitude, kota.longitude);
+      if (idSaatIni !== requestIdRef.current) return; // hasil basi, abaikan
+      setCuaca(data.cuaca);
+      setKualitasUdara(data.kualitasUdara);
+      setDariCache(data.dariCache);
+      setWaktuData(data.waktu);
     } catch (err) {
       if (idSaatIni !== requestIdRef.current) return;
-      setPesanError("Gagal memuat data cuaca. Periksa koneksi internet Anda.");
+      setCuaca(null);
+      setKualitasUdara(null);
+      setDariCache(false);
+      setPesanError(
+        "Belum ada data tersimpan untuk kota ini. Hubungkan ke internet sekali agar data bisa disimpan untuk mode offline.",
+      );
     } finally {
       if (idSaatIni === requestIdRef.current) setSedangMemuat(false);
     }
@@ -124,7 +136,10 @@ export default function HalamanUtama() {
 
       {hasilPencarian.map((kota) => (
         <TouchableOpacity key={kota.id} onPress={() => pilihKota(kota)}>
-          <Text>{kota.name}</Text>
+          <Text>
+            {kota.name}
+            {kota.admin1 ? `, ${kota.admin1}` : ""}
+          </Text>
         </TouchableOpacity>
       ))}
 
@@ -142,6 +157,7 @@ export default function HalamanUtama() {
 
       {cuaca && kualitasUdara && kotaTerpilih && !sedangMemuat && (
         <>
+          {dariCache && <BannerOffline waktu={waktuData} />}
           <WeatherCard
             kota={kotaTerpilih.name}
             suhu={cuaca.saatIni.suhu}
