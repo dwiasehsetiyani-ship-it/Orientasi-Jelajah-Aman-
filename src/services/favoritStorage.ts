@@ -1,3 +1,4 @@
+// src/services/favoritStorage.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { KotaFavorit } from "../types/favorit";
 
