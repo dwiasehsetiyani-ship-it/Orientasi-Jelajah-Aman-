@@ -1,4 +1,3 @@
-// src/app/tambah-favorit.tsx
 import { View, Text, Button } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { tambahFavorit } from "../services/favoritStorage";
