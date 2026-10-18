@@ -54,3 +54,7 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Status Data: Cache Segar, Cache Basi, dan First-Run Offline
+
+Cache segar adalah data tersimpan yang umurnya kurang dari 30 menit, sehingga aplikasi memakainya langsung tanpa memanggil internet. Cache basi adalah data tersimpan yang sudah lebih tua dari 30 menit tetapi dipakai karena internet gagal, dan ditandai sebagai mode offline yang mungkin usang. First-run offline terjadi saat belum ada data tersimpan dan internet juga tidak ada, sehingga aplikasi hanya menampilkan pesan error dengan tombol Coba Lagi. Label status data penting agar pengguna tahu apakah angka yang dilihat benar-benar terbaru atau salinan lama, sehingga tidak salah mengambil keputusan.
