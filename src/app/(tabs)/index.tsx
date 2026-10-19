@@ -1,14 +1,7 @@
 // src/app/(tabs)/index.tsx
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Button,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Button, ScrollView, Text, TouchableOpacity,View,} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AtribusiCuaca from "../../components/AtribusiCuaca";
 import SearchBox from "../../components/SearchBox";
