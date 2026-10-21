@@ -1,5 +1,6 @@
 // src/components/StatusData.tsx
-import { View, Text } from "react-native";
+import { Text, View } from "react-native";
+import { useTema } from "../theme/tema";
 import { SumberData } from "../types/cache";
 
 interface StatusDataProps {
@@ -23,6 +24,7 @@ function labelSumber(sumber: SumberData): string {
 }
 
 export default function StatusData({ sumber, disimpanPada }: StatusDataProps) {
+  const { warna } = useTema();
   const basi = sumber === "cache-basi";
   const label = labelSumber(sumber);
   const umur = formatUmur(disimpanPada);
@@ -34,13 +36,20 @@ export default function StatusData({ sumber, disimpanPada }: StatusDataProps) {
       style={{
         padding: 8,
         borderRadius: 8,
-        backgroundColor: basi ? "#FEF3E2" : "#EAFBF6",
+        backgroundColor: basi ? warna.peringatanLatar : warna.suksesLatar,
       }}
     >
-      <Text style={{ fontSize: 12, color: basi ? "#B45309" : "#13795F" }}>
+      <Text
+        style={{
+          fontSize: 12,
+          color: basi ? warna.peringatanTeks : warna.suksesTeks,
+        }}
+      >
         {label}
       </Text>
-      <Text style={{ fontSize: 11, color: "#666666" }}>Diperbarui {umur}</Text>
+      <Text style={{ fontSize: 11, color: warna.teksPelan }}>
+        Diperbarui {umur}
+      </Text>
     </View>
   );
 }
