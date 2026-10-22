@@ -1,11 +1,7 @@
 // src/services/cacheRepository.ts
 import { ambilDatabase } from "../db/database";
 import { DataCuacaLengkap, DataKualitasUdara } from "../types/weather";
-import {
-  DataTersimpan,
-  KotaUntukCache,
-  RingkasanKotaTersimpan,
-} from "../types/cache";
+import {DataTersimpan,KotaUntukCache,RingkasanKotaTersimpan,} from "../types/cache";
 
 interface BarisCache {
   kunci: string;
